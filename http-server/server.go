@@ -11,8 +11,23 @@ type PlayerStore interface {
 	RecordWin(name string)
 }
 
+// PlayerServer holds dependencies needed to serve requests
 type PlayerServer struct {
-	store PlayerStore
+	store  PlayerStore
+	router *http.ServeMux // ADDED: router is now stored, built once
+}
+
+// NewPlayerServer builds a PlayerServer with routes registered once, not per-request
+func NewPlayerServer(store PlayerStore) *PlayerServer {
+	p := &PlayerServer{
+		store,
+		http.NewServeMux(),
+	}
+
+	p.router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	p.router.Handle("/players/", http.HandlerFunc(p.playersHandler))
+
+	return p
 }
 
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
@@ -30,13 +45,9 @@ func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// ServeHTTP delegates every request to the pre-built router
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	router := http.NewServeMux()
-	router.Handle("/league", http.HandlerFunc(p.leagueHandler))    // CHANGED: was inline anonymous func, now points to named method
-	router.Handle("/players/", http.HandlerFunc(p.playersHandler)) // CHANGED: was inline anonymous func, now points to named method
-
-	router.ServeHTTP(w, r)
+	p.router.ServeHTTP(w, r) // CHANGED: no longer builds router here, just uses the stored one
 }
 
 // ADDED: pulled out of the old inline func for /league

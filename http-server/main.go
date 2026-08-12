@@ -28,6 +28,6 @@ func (i *InMemoryPlayerStore) RecordWin(name string) {
 }
 
 func main() {
-	server := &PlayerServer{NewInMemoryPlayerStore()} // UNCHANGED
-	log.Fatal(http.ListenAndServe(":5000", server))   // UNCHANGED
+	server := NewPlayerServer(NewInMemoryPlayerStore()) // CHANGED: use constructor so router gets built
+	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
 }

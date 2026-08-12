@@ -33,7 +33,7 @@ func TestGETPlayers(t *testing.T) {
 			"Floyd":  10,
 		},
 	}
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store) // CHANGED: use constructor so router gets built
 
 	t.Run("returns Pepper's score", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/players/Pepper", nil)
@@ -62,7 +62,7 @@ func TestStoreWins(t *testing.T) {
 	store := StubPlayerStore{
 		scores: map[string]int{},
 	}
-	server := &PlayerServer{&store}
+	server := NewPlayerServer(&store) // CHANGED: use constructor so router gets built
 
 	t.Run("it records wins on POST", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodPost, "/players/Pepper", nil)
@@ -86,8 +86,8 @@ func TestStoreWins(t *testing.T) {
 
 // TestLeague checks the server responds to GET /league with 200 OK
 func TestLeague(t *testing.T) {
-	store := StubPlayerStore{} // empty stub, don't care about scores yet
-	server := &PlayerServer{&store}
+	store := StubPlayerStore{}        // empty stub, don't care about scores yet
+	server := NewPlayerServer(&store) // CHANGED: use constructor so router gets built
 
 	t.Run("it returns 200 on /league", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/league", nil) // build GET /league request
