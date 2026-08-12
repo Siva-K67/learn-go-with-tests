@@ -15,18 +15,43 @@ type PlayerServer struct {
 	store PlayerStore
 }
 
+func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
+	score := p.store.GetPlayerScore(player)
+
+	if score == 0 {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	fmt.Fprint(w, score)
+}
+
+func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
+	p.store.RecordWin(player)
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	router := http.NewServeMux()
+	router.Handle("/league", http.HandlerFunc(p.leagueHandler))    // CHANGED: was inline anonymous func, now points to named method
+	router.Handle("/players/", http.HandlerFunc(p.playersHandler)) // CHANGED: was inline anonymous func, now points to named method
+
+	router.ServeHTTP(w, r)
+}
+
+// ADDED: pulled out of the old inline func for /league
+func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+// ADDED: pulled out of the old inline func for /players/
+func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
 	player := strings.TrimPrefix(r.URL.Path, "/players/")
 
 	switch r.Method {
 	case http.MethodPost:
-		p.store.RecordWin(player)
-		w.WriteHeader(http.StatusAccepted)
+		p.processWin(w, player)
 	case http.MethodGet:
-		score := p.store.GetPlayerScore(player)
-		if score == 0 {
-			w.WriteHeader(http.StatusNotFound)
-		}
-		fmt.Fprint(w, score)
+		p.showScore(w, player)
 	}
 }
