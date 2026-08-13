@@ -31,3 +31,8 @@ func main() {
 	server := NewPlayerServer(NewInMemoryPlayerStore()) // CHANGED: use constructor so router gets built
 	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
 }
+
+// GetLeague returns league data (temporary placeholder — not real yet)
+func (i *InMemoryPlayerStore) GetLeague() []Player {
+	return nil // ADDED: just enough to satisfy the interface for now
+}

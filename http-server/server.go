@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,27 +10,34 @@ import (
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
+	GetLeague() []Player
 }
 
 // PlayerServer holds dependencies needed to serve requests
 type PlayerServer struct {
-	store  PlayerStore
-	router *http.ServeMux // ADDED: router is now stored, built once
+	store        PlayerStore
+	http.Handler // CHANGED: embedded interface instead of named *http.ServeMux field
+}
+
+// Player represents a single entry in the league table
+type Player struct {
+	Name string
+	Wins int
 }
 
 // NewPlayerServer builds a PlayerServer with routes registered once, not per-request
 func NewPlayerServer(store PlayerStore) *PlayerServer {
-	p := &PlayerServer{
-		store,
-		http.NewServeMux(),
-	}
+	p := new(PlayerServer) // creates zero-valued *PlayerServer
+	p.store = store
 
-	p.router.Handle("/league", http.HandlerFunc(p.leagueHandler))
-	p.router.Handle("/players/", http.HandlerFunc(p.playersHandler))
+	router := http.NewServeMux()
+	router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	router.Handle("/players/", http.HandlerFunc(p.playersHandler))
+
+	p.Handler = router // ADDED: fills in the embedded http.Handler with our router
 
 	return p
 }
-
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	score := p.store.GetPlayerScore(player)
 
@@ -45,13 +53,9 @@ func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-// ServeHTTP delegates every request to the pre-built router
-func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.router.ServeHTTP(w, r) // CHANGED: no longer builds router here, just uses the stored one
-}
-
-// ADDED: pulled out of the old inline func for /league
+// leagueHandler responds to GET /league with the league table as JSON
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(p.store.GetLeague()) // CHANGED: pulls from the store, not a local method
 	w.WriteHeader(http.StatusOK)
 }
 

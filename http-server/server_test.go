@@ -1,14 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
+	league   []Player
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) int {
@@ -84,17 +87,39 @@ func TestStoreWins(t *testing.T) {
 	})
 }
 
-// TestLeague checks the server responds to GET /league with 200 OK
+// TestLeague checks GET /league returns the correct player data as JSON
 func TestLeague(t *testing.T) {
-	store := StubPlayerStore{}        // empty stub, don't care about scores yet
-	server := NewPlayerServer(&store) // CHANGED: use constructor so router gets built
 
-	t.Run("it returns 200 on /league", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/league", nil) // build GET /league request
-		response := httptest.NewRecorder()                            // records the response
+	t.Run("it returns the league table as JSON", func(t *testing.T) {
+		wantedLeague := []Player{ // ADDED: the data we expect back
+			{"Cleo", 32},
+			{"Chris", 20},
+			{"Tiest", 14},
+		}
+
+		store := StubPlayerStore{nil, nil, wantedLeague} // CHANGED: stub now seeded with wantedLeague
+		server := NewPlayerServer(&store)
+
+		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
-		assertStatus(t, response.Code, http.StatusOK) // check we got 200
+		var got []Player
+		err := json.NewDecoder(response.Body).Decode(&got)
+		if err != nil {
+			t.Fatalf("Unable to parse response from server %q into slice of Player, '%v'", response.Body, err)
+		}
+
+		assertStatus(t, response.Code, http.StatusOK)
+
+		if !reflect.DeepEqual(got, wantedLeague) { // ADDED: compare actual vs expected
+			t.Errorf("got %v want %v", got, wantedLeague)
+		}
 	})
+}
+
+// GetLeague returns whatever league data the test seeded into the stub
+func (s *StubPlayerStore) GetLeague() []Player {
+	return s.league
 }
