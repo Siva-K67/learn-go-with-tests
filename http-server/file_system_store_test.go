@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"os"
 	"testing"
 )
@@ -81,7 +80,7 @@ func assertScoreEquals(t testing.TB, got, want int) {
 }
 
 // createTempFile makes a temp file preloaded with initialData, returns it plus a cleanup func
-func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
+func createTempFile(t testing.TB, initialData string) (*os.File, func()) {
 	t.Helper()
 
 	tmpfile, err := os.CreateTemp("", "db") // "db" is just a filename prefix, OS picks a unique name
