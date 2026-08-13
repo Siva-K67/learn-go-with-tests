@@ -8,19 +8,20 @@ import (
 // TestFileSystemStore verifies FileSystemPlayerStore reads league data from a Reader
 func TestFileSystemStore(t *testing.T) {
 
-	t.Run("league from a reader", func(t *testing.T) {
+	t.Run("league sorted", func(t *testing.T) { // CHANGED: renamed from "league from a reader"
 		database, cleanDatabase := createTempFile(t, `[
 			{"Name": "Cleo", "Wins": 10},
-			{"Name": "Chris", "Wins": 33}]`) // fake JSON data source, stands in for a real file
+			{"Name": "Chris", "Wins": 33}]`)
 		defer cleanDatabase()
 
 		store, err := NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
+
 		got := store.GetLeague()
 
-		want := []Player{
+		want := League{
+			{"Chris", 33}, // CHANGED: Chris (33 wins) now expected first
 			{"Cleo", 10},
-			{"Chris", 33},
 		}
 
 		assertLeague(t, got, want)
@@ -28,7 +29,6 @@ func TestFileSystemStore(t *testing.T) {
 		got = store.GetLeague()
 		assertLeague(t, got, want)
 	})
-
 	t.Run("get player score", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, `[
 			{"Name": "Cleo", "Wins": 10},

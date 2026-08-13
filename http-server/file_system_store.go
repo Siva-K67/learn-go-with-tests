@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 )
 
 // FileSystemPlayerStore implements PlayerStore backed by JSON data from a file, cached in memory
@@ -13,9 +14,12 @@ type FileSystemPlayerStore struct {
 	league   League // ADDED: cached in-memory copy, loaded once at construction
 }
 
-// GetLeague returns the cached league — no disk read needed since we loaded it once at startup
+// GetLeague returns the cached league sorted by wins, highest first
 func (f *FileSystemPlayerStore) GetLeague() League {
-	return f.league // CHANGED: no more Seek + re-parse from disk every call
+	sort.Slice(f.league, func(i, j int) bool { // ADDED
+		return f.league[i].Wins > f.league[j].Wins
+	})
+	return f.league
 }
 
 // GetPlayerScore returns a named player's win count, or 0 if they don't exist
