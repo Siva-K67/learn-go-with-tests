@@ -8,8 +8,8 @@ import (
 
 // FileSystemPlayerStore implements PlayerStore backed by JSON data from a file, cached in memory
 type FileSystemPlayerStore struct {
-	database io.Writer // CHANGED: was io.ReadWriteSeeker — tape now owns the seeking
-	league   League    // ADDED: cached in-memory copy, loaded once at construction
+	database *json.Encoder
+	league   League // ADDED: cached in-memory copy, loaded once at construction
 }
 
 // NewFileSystemPlayerStore loads the league once from file and wraps writes in a tape
@@ -18,7 +18,7 @@ func NewFileSystemPlayerStore(file *os.File) *FileSystemPlayerStore { // ADDED
 	league, _ := NewLeague(file)
 
 	return &FileSystemPlayerStore{
-		database: &tape{file}, // wrap the file so writes always start clean
+		database: json.NewEncoder(&tape{file}), // wrap the file so writes always start clean
 		league:   league,
 	}
 }
@@ -48,5 +48,5 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 		f.league = append(f.league, Player{name, 1}) // CHANGED: append to f.league directly
 	}
 
-	json.NewEncoder(f.database).Encode(f.league) // CHANGED: no manual Seek — tape handles it
+	f.database.Encode(f.league)
 }
