@@ -32,7 +32,11 @@ func main() {
 	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
 }
 
-// GetLeague returns league data (temporary placeholder — not real yet)
+// GetLeague converts the internal score map into a slice of Player
 func (i *InMemoryPlayerStore) GetLeague() []Player {
-	return nil // ADDED: just enough to satisfy the interface for now
+	var league []Player // starts as nil slice, grows via append
+	for name, wins := range i.store {
+		league = append(league, Player{name, wins}) // convert each map entry into a Player
+	}
+	return league
 }

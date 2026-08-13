@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestRecordingWinsAndRetrievingThem drives the real server + real store through actual HTTP requests
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryPlayerStore()
 	server := NewPlayerServer(store)
@@ -24,14 +25,26 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
 
-	response := httptest.NewRecorder()
-	server.ServeHTTP(response, newGetScoreRequest(player))
+	t.Run("get score", func(t *testing.T) { // CHANGED: wrapped in subtest
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newGetScoreRequest(player))
 
-	if response.Code != http.StatusOK {
-		t.Errorf("got status %d want %d", response.Code, http.StatusOK)
-	}
+		assertStatus(t, response.Code, http.StatusOK) // CHANGED: uses shared helper from server_test.go
 
-	if response.Body.String() != "3" {
-		t.Errorf("got %q want %q", response.Body.String(), "3")
-	}
+		if response.Body.String() != "3" {
+			t.Errorf("got %q want %q", response.Body.String(), "3")
+		}
+	})
+
+	t.Run("get league", func(t *testing.T) { // ADDED: new subtest checking /league end-to-end
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newLeagueRequest()) // reuses helper from server_test.go
+		assertStatus(t, response.Code, http.StatusOK)
+
+		got := getLeagueFromResponse(t, response.Body) // reuses helper from server_test.go
+		want := []Player{
+			{"Pepper", 3},
+		}
+		assertLeague(t, got, want)
+	})
 }
