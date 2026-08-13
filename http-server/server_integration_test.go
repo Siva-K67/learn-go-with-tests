@@ -10,7 +10,7 @@ import (
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	database, cleanDatabase := createTempFile(t, `[]`) // valid empty JSON array, not ""
 	defer cleanDatabase()
-	store := &FileSystemPlayerStore{database}
+	store := NewFileSystemPlayerStore(database)
 
 	server := NewPlayerServer(store)
 	player := "Pepper"
