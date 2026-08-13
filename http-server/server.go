@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const jsonContentType = "application/json" // ADDED: avoids repeating this string everywhere
+
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
@@ -55,8 +57,8 @@ func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
 
 // leagueHandler responds to GET /league with the league table as JSON
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(p.store.GetLeague()) // CHANGED: pulls from the store, not a local method
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("content-type", jsonContentType) // CHANGED: was hard-coded string
+	json.NewEncoder(w).Encode(p.store.GetLeague())
 }
 
 // ADDED: pulled out of the old inline func for /players/
