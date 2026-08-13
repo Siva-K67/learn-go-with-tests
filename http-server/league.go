@@ -15,3 +15,16 @@ func NewLeague(rdr io.Reader) ([]Player, error) {
 	}
 	return league, err
 }
+
+// League is a collection of Player with lookup behavior attached
+type League []Player
+
+// Find returns a pointer to the player with the given name, or nil if not present
+func (l League) Find(name string) *Player {
+	for i, p := range l {
+		if p.Name == name {
+			return &l[i]
+		}
+	}
+	return nil
+}

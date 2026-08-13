@@ -10,34 +10,32 @@ type FileSystemPlayerStore struct {
 	database io.ReadWriteSeeker // CHANGED: was io.Reader — need Seek to rewind before each read
 }
 
-// GetLeague decodes the JSON in database into a slice of Player
-func (f *FileSystemPlayerStore) GetLeague() []Player {
-	f.database.Seek(0, io.SeekStart) // ADDED: move the read cursor back to byte 0
-	league, _ := NewLeague(f.database)
+// GetLeague reads and parses the current league data from the file
+func (f *FileSystemPlayerStore) GetLeague() League {
+	f.database.Seek(0, io.SeekStart)   // rewind so we read from the start every time
+	league, _ := NewLeague(f.database) // parse JSON into League
 	return league
 }
 
-// GetPlayerScore returns the win count for a named player, or 0 if not found
+// GetPlayerScore returns a named player's win count, or 0 if they don't exist
 func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
-	var wins int
-	for _, player := range f.GetLeague() { // reuse GetLeague — it already handles Seek + parsing
-		if player.Name == name {
-			wins = player.Wins
-			break
-		}
+	player := f.GetLeague().Find(name) // look up player by name
+
+	if player != nil {
+		return player.Wins
 	}
-	return wins
+	return 0 // no such player
 }
 
+// RecordWin increments a player's win count and persists the updated league to disk
 func (f *FileSystemPlayerStore) RecordWin(name string) {
 	league := f.GetLeague()
+	player := league.Find(name) // pointer into league, or nil
 
-	for i, player := range league {
-		if player.Name == name {
-			league[i].Wins++
-		}
+	if player != nil {
+		player.Wins++ // mutate through the pointer, updates league in place
 	}
 
-	f.database.Seek(0, io.SeekStart)
-	json.NewEncoder(f.database).Encode(league)
+	f.database.Seek(0, io.SeekStart)           // rewind before overwriting
+	json.NewEncoder(f.database).Encode(league) // write updated league back
 }

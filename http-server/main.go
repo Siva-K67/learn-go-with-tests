@@ -27,16 +27,16 @@ func (i *InMemoryPlayerStore) RecordWin(name string) {
 	i.store[name]++
 }
 
-func main() {
-	server := NewPlayerServer(NewInMemoryPlayerStore()) // CHANGED: use constructor so router gets built
-	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
-}
-
 // GetLeague converts the internal score map into a slice of Player
-func (i *InMemoryPlayerStore) GetLeague() []Player {
-	var league []Player // starts as nil slice, grows via append
+func (i *InMemoryPlayerStore) GetLeague() League {
+	var league League // starts as nil slice, grows via append
 	for name, wins := range i.store {
 		league = append(league, Player{name, wins}) // convert each map entry into a Player
 	}
 	return league
+}
+
+func main() {
+	server := NewPlayerServer(NewInMemoryPlayerStore()) // CHANGED: use constructor so router gets built
+	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
 }

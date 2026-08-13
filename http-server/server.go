@@ -12,7 +12,7 @@ const jsonContentType = "application/json" // ADDED: avoids repeating this strin
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
-	GetLeague() []Player
+	GetLeague() League
 }
 
 // PlayerServer holds dependencies needed to serve requests

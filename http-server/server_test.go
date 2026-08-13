@@ -114,7 +114,7 @@ func TestLeague(t *testing.T) {
 }
 
 // GetLeague returns whatever league data the test seeded into the stub
-func (s *StubPlayerStore) GetLeague() []Player {
+func (s *StubPlayerStore) GetLeague() League {
 	return s.league
 }
 
