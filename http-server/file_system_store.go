@@ -34,6 +34,8 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 
 	if player != nil {
 		player.Wins++ // mutate through the pointer, updates league in place
+	} else {
+		league = append(league, Player{name, 1}) //if palyer does not exist in records yet and he wins, then add this player into the record.
 	}
 
 	f.database.Seek(0, io.SeekStart)           // rewind before overwriting
