@@ -8,7 +8,10 @@ import (
 
 // TestRecordingWinsAndRetrievingThem drives the real server + real store through actual HTTP requests
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	store := NewInMemoryPlayerStore()
+	database, cleanDatabase := createTempFile(t, `[]`) // valid empty JSON array, not ""
+	defer cleanDatabase()
+	store := &FileSystemPlayerStore{database}
+
 	server := NewPlayerServer(store)
 	player := "Pepper"
 

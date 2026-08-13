@@ -3,40 +3,22 @@ package main
 import (
 	"log"
 	"net/http"
-	"sync" // ADDED: needed for Mutex
+	"os"
 )
 
-type InMemoryPlayerStore struct {
-	store map[string]int
-	lock  sync.Mutex // ADDED: guards `store` against concurrent access
-}
+const dbFileName = "game.db.json"
 
-func NewInMemoryPlayerStore() *InMemoryPlayerStore {
-	return &InMemoryPlayerStore{store: map[string]int{}}
-}
-
-func (i *InMemoryPlayerStore) GetPlayerScore(name string) int {
-	i.lock.Lock()         // ADDED
-	defer i.lock.Unlock() // ADDED
-	return i.store[name]
-}
-
-func (i *InMemoryPlayerStore) RecordWin(name string) {
-	i.lock.Lock()         // ADDED
-	defer i.lock.Unlock() // ADDED
-	i.store[name]++
-}
-
-// GetLeague converts the internal score map into a slice of Player
-func (i *InMemoryPlayerStore) GetLeague() League {
-	var league League // starts as nil slice, grows via append
-	for name, wins := range i.store {
-		league = append(league, Player{name, wins}) // convert each map entry into a Player
-	}
-	return league
-}
-
+// main opens (or creates) the database file, wires it into the server, and starts listening
 func main() {
-	server := NewPlayerServer(NewInMemoryPlayerStore()) // CHANGED: use constructor so router gets built
-	log.Fatal(http.ListenAndServe(":5000", server))     // UNCHANGED
+	db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666) // open/create the JSON db file, read+write
+	if err != nil {
+		log.Fatalf("problem opening %s %v", dbFileName, err)
+	}
+
+	store := &FileSystemPlayerStore{db} // wraps the file as our PlayerStore
+	server := NewPlayerServer(store)
+
+	if err := http.ListenAndServe(":5000", server); err != nil {
+		log.Fatalf("could not listen on port 5000 %v", err)
+	}
 }
